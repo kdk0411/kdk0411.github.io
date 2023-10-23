@@ -104,11 +104,11 @@ analytics:
 
 # Site Author
 author:
-  name             : "Your Name"
+  name             : "Dong ki"
   avatar           : # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
-  bio              : "I am an **amazing** person."
-  location         : "Somewhere"
-  email            :
+  bio              : "Hi i'm ML/Ai Developer"
+  location         : "Incheon.Korea"
+  email            : "wnsldjqja@gmail.com"
   links:
     - label: "Email"
       icon: "fas fa-fw fa-envelope-square"
