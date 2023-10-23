@@ -1,3 +1,7 @@
+---
+layout: single
+title:  "NLP#01"
+---
 ## TensorFlow
     머신 러닝과 딥 러닝을 직관적이고 손쉽게 할 수 있도록 설계되었습니다.
 
