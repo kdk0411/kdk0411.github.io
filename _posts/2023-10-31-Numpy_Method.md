@@ -1,3 +1,10 @@
+---
+layout: single
+title:  "Numpy"
+---
+# Numpy 사용법
+
+
 ```python
 import numpy as np
 import pandas as pd
