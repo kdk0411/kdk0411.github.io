@@ -1,0 +1,315 @@
+# 정수 인코딩
+
+    컴퓨터는 텍스트보다 숫자를 처리할 때 더욱 유리합니다.
+    이에 따라 자연어 처리에서는 텍스트를 숫자로 바꾸는 기법이 존재합니다.
+    그전에 각 단어를 고유 정수에 맵핑(Mapping)시키는 작업이 필요합니다.
+    이는 C언어의 포인터를 수동으로 지정하는 느낌인것 같습니다.
+
+## 1. 정수 인코딩
+
+### 1) Dictionary 사용
+
+
+```python
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+```
+
+
+```python
+text = "A barber is a person. a barber is good person. a barber is huge person. he Knew A Secret! The Secret He Kept is huge secret. Huge secret. His barber kept his word. a barber kept his word. His barber kept his secret. But keeping and keeping such a huge secret to himself was driving the barber crazy. the barber went up a huge mountain."
+
+```
+
+
+```python
+# 문장 토큰화
+sentences = sent_tokenize(text)
+print(sentences)
+```
+
+    ['A barber is a person.', 'a barber is good person.', 'a barber is huge person.', 'he Knew A Secret!', 'The Secret He Kept is huge secret.', 'Huge secret.', 'His barber kept his word.', 'a barber kept his word.', 'His barber kept his secret.', 'But keeping and keeping such a huge secret to himself was driving the barber crazy.', 'the barber went up a huge mountain.']
+    
+
+    단어들을 소문자화 하여 개수를 통일시키고, 불용어와 단어의 
+    길이가 2이하인 경우단어를 일부 제외하겠습니다.
+
+
+```python
+voca = {}
+preprocessed_sentences = []
+stop_words = set(stopwords.words('english'))
+
+for i in sentences:
+    # 단어 토큰화
+    tokenized_sentence = word_tokenize(i)
+    ret = []
+    
+    for word in tokenized_sentence:
+        word = word.lower() # 모든 단어를 소문자화하여 단어의 개수를 줄임
+        
+        if word not in stop_words: # 단어 토큰화된 결과에 대해 불용어를 제거
+            if len(word)>2: # 단어의 길이가 2 이하인 경우 제거
+                ret.append(word)
+                if word not in voca:
+                    voca[word] = 0
+                voca[word] += 1
+    preprocessed_sentences.append(ret)
+print(preprocessed_sentences)
+print('단어 : ' ,voca)
+```
+
+    [['barber', 'person'], ['barber', 'good', 'person'], ['barber', 'huge', 'person'], ['knew', 'secret'], ['secret', 'kept', 'huge', 'secret'], ['huge', 'secret'], ['barber', 'kept', 'word'], ['barber', 'kept', 'word'], ['barber', 'kept', 'secret'], ['keeping', 'keeping', 'huge', 'secret', 'driving', 'barber', 'crazy'], ['barber', 'went', 'huge', 'mountain']]
+    단어 :  {'barber': 8, 'person': 3, 'good': 1, 'huge': 5, 'knew': 1, 'secret': 6, 'kept': 4, 'word': 2, 'keeping': 2, 'driving': 1, 'crazy': 1, 'went': 1, 'mountain': 1}
+    
+
+    voca가 Dictionary로 저장되어 있어 단어를 Key로 빈도수를 Value로
+    저장되어 있는 것을 볼 수 있다.
+
+
+```python
+print(voca["barber"])
+```
+
+    8
+    
+
+    위와 같은 형태로 Key값을 검색하면 Value를 출력하는 모습을 볼 수 있다.
+    이제 빈도수가 높은 단어를 낮은 정수로 표현하겠습니다.
+
+
+```python
+word_to_index = {}
+num = 0
+# voca를 key의 Value에 따라 역순으로 정렬
+voca = sorted(voca.items(),key=lambda x:x[1], reverse=True)
+for word, frequency in voca:
+    if frequency > 1: # 빈도수가 작은 단어는 제외
+        num += 1
+        word_to_index[word] = num
+print(word_to_index)
+```
+
+    {'barber': 1, 'secret': 2, 'huge': 3, 'kept': 4, 'person': 5, 'word': 6, 'keeping': 7}
+    
+
+    단어 집합에 존재하지 않는 단어들이 생기는 상황을
+    Out-Of-Vocabulary문제라고 합니다.
+    흔히 이를 OOV문제라고 지칭합니다. 이제 단어 집합에 없는 단어를
+    OOV의 인덱스로 인코딩하겠습니다.
+
+
+```python
+word_to_index['OOV'] = len(word_to_index) + 1
+print(word_to_index)
+```
+
+    {'barber': 1, 'secret': 2, 'huge': 3, 'kept': 4, 'person': 5, 'word': 6, 'keeping': 7, 'OOV': 8}
+    
+
+
+```python
+encoded_sentences = []
+for i in preprocessed_sentences:
+    e_sentence = []
+    for word in i:
+        try:
+            # 단어 집합에 있는 단어는 해당 단어의 정수를 출력
+            e_sentence.append(word_to_index[word])
+        except KeyError:
+            # 단어 집합에 없는 단어라면 OOV의 정수를 출력
+            e_sentence.append(word_to_index['OOV'])
+    encoded_sentences.append(e_sentence)
+print(encoded_sentences)
+```
+
+    [[1, 5], [1, 8, 5], [1, 3, 5], [8, 2], [2, 4, 3, 2], [3, 2], [1, 4, 6], [1, 4, 6], [1, 4, 2], [7, 7, 3, 2, 8, 1, 8], [1, 8, 3, 8]]
+    
+
+### 2) Counter 사용
+
+
+```python
+from collections import Counter
+print(preprocessed_sentences)
+```
+
+    [['barber', 'person'], ['barber', 'good', 'person'], ['barber', 'huge', 'person'], ['knew', 'secret'], ['secret', 'kept', 'huge', 'secret'], ['huge', 'secret'], ['barber', 'kept', 'word'], ['barber', 'kept', 'word'], ['barber', 'kept', 'secret'], ['keeping', 'keeping', 'huge', 'secret', 'driving', 'barber', 'crazy'], ['barber', 'went', 'huge', 'mountain']]
+    
+
+
+```python
+all_word_list = sum(preprocessed_sentences, [])
+print(all_word_list)
+```
+
+    ['barber', 'person', 'barber', 'good', 'person', 'barber', 'huge', 'person', 'knew', 'secret', 'secret', 'kept', 'huge', 'secret', 'huge', 'secret', 'barber', 'kept', 'word', 'barber', 'kept', 'word', 'barber', 'kept', 'secret', 'keeping', 'keeping', 'huge', 'secret', 'driving', 'barber', 'crazy', 'barber', 'went', 'huge', 'mountain']
+    
+
+    Counter를 사용하여 중복제거한 뒤 빈도수를 측정합니다.
+    이전 Dictionary만을 이용했을때 와는 달리 빈도수가 높은 순으로 출력이
+    되어있는 것을 볼 수 있습니다.
+
+
+```python
+voca = Counter(all_word_list)
+print(voca)
+```
+
+    Counter({'barber': 8, 'secret': 6, 'huge': 5, 'kept': 4, 'person': 3, 'word': 2, 'keeping': 2, 'good': 1, 'knew': 1, 'driving': 1, 'crazy': 1, 'went': 1, 'mountain': 1})
+    
+
+
+```python
+voca_size = 5
+# 등장 빈도수가 높은 상위 5개의 단어만 저장
+voca = voca.most_common(voca_size)
+voca
+```
+
+
+
+
+    [('barber', 8), ('secret', 6), ('huge', 5), ('kept', 4), ('person', 3)]
+
+
+
+
+```python
+word_to_index = {}
+num = 0
+for word,frequency in voca:
+    num += 1
+    word_to_index[word] = num
+print(word_to_index)
+```
+
+    {'barber': 1, 'secret': 2, 'huge': 3, 'kept': 4, 'person': 5}
+    
+
+### 3) NLTK의 FreqDist 사용
+
+    NLTK에서 FreqDist라는 빈도수 계산 도구를 지원합니다.
+
+
+```python
+from nltk import FreqDist
+import numpy as np
+```
+
+
+```python
+# np.hstack으로 문장 구분을 제거
+voca = FreqDist(np.hstack(preprocessed_sentences))
+voca
+```
+
+
+
+
+    FreqDist({'barber': 8, 'secret': 6, 'huge': 5, 'kept': 4, 'person': 3, 'word': 2, 'keeping': 2, 'good': 1, 'knew': 1, 'driving': 1, ...})
+
+
+
+    이전 방법들과 같이 제대로 빈도수가 측정된것을 확인할 수 있다.
+    하지만 출력내용을 잘보면 ...으로 처리된것이 확인된다.
+    따라서 전과 같이 size를 5로 제한하여 재정렬 해보자.
+
+
+```python
+voca_size = 5
+voca = voca.most_common(voca_size)
+print(voca)
+```
+
+    [('barber', 8), ('secret', 6), ('huge', 5), ('kept', 4), ('person', 3)]
+    
+
+
+```python
+word_to_index = {word[0] : index+1 for index,word in enumerate(voca)}
+print(word_to_index)
+```
+
+    {'barber': 1, 'secret': 2, 'huge': 3, 'kept': 4, 'person': 5}
+    
+
+#### enumerate 이해
+
+    순서가 있는 자료형(list, set, tuple, Dict, str)을 입력받아
+    인덱스를 순차적으로 함께 출력한다는 특징을 가집니다.
+
+
+```python
+test = ['a','b','c','d']
+for index, value in enumerate(test):
+    print("value : {}, index : {}".format(value,index))
+```
+
+    value : a, index : 0
+    value : b, index : 1
+    value : c, index : 2
+    value : d, index : 3
+    
+
+## 2. 케라스의 텍스트 전처리
+
+
+```python
+from tensorflow.keras.preprocessing.text import Tokenizer
+preprocessed_sentences = [['barber', 'person'], ['barber', 'good', 'person'], ['barber', 'huge', 'person'], ['knew', 'secret'], ['secret', 'kept', 'huge', 'secret'], ['huge', 'secret'], ['barber', 'kept', 'word'], ['barber', 'kept', 'word'], ['barber', 'kept', 'secret'], ['keeping', 'keeping', 'huge', 'secret', 'driving', 'barber', 'crazy'], ['barber', 'went', 'huge', 'mountain']]
+
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts(preprocessed_sentences)
+print("Index")
+print(tokenizer.word_index)
+print("Frequncy")
+print(tokenizer.word_counts)
+```
+
+    Index
+    {'barber': 1, 'secret': 2, 'huge': 3, 'kept': 4, 'person': 5, 'word': 6, 'keeping': 7, 'good': 8, 'knew': 9, 'driving': 10, 'crazy': 11, 'went': 12, 'mountain': 13}
+    Frequncy
+    OrderedDict([('barber', 8), ('person', 3), ('good', 1), ('huge', 5), ('knew', 1), ('secret', 6), ('kept', 4), ('word', 2), ('keeping', 2), ('driving', 1), ('crazy', 1), ('went', 1), ('mountain', 1)])
+    
+
+
+```python
+# texts_to_sequences()는 입력으로 들어온 Corpus에 대해
+# 각 단어를 이미 정해진 인덱스로 변환시킴
+print(tokenizer.texts_to_sequences(preprocessed_sentences))
+```
+
+    [[1, 5], [1, 8, 5], [1, 3, 5], [9, 2], [2, 4, 3, 2], [3, 2], [1, 4, 6], [1, 4, 6], [1, 4, 2], [7, 7, 3, 2, 10, 1, 11], [1, 12, 3, 13]]
+    
+
+    지금까지는 most_common()을 사용하여 빈도수가 높은 n개만을 출력하였는데
+    Keras에서는 Tokenizer(num_words=num)을 사용하여 이와같은 효과를 볼 수 있다.
+
+
+```python
+voca_size = 5
+tokenizer = Tokenizer(num_words = voca_size+2, oov_token = 'OOV')
+tokenizer.fit_on_texts(preprocessed_sentences)
+print("Index")
+print(tokenizer.word_index)
+print("Frequency")
+print(tokenizer.word_counts)
+print(tokenizer.texts_to_sequences(preprocessed_sentences))
+```
+
+    Index
+    {'OOV': 1, 'barber': 2, 'secret': 3, 'huge': 4, 'kept': 5, 'person': 6, 'word': 7, 'keeping': 8, 'good': 9, 'knew': 10, 'driving': 11, 'crazy': 12, 'went': 13, 'mountain': 14}
+    Frequency
+    OrderedDict([('barber', 8), ('person', 3), ('good', 1), ('huge', 5), ('knew', 1), ('secret', 6), ('kept', 4), ('word', 2), ('keeping', 2), ('driving', 1), ('crazy', 1), ('went', 1), ('mountain', 1)])
+    [[2, 6], [2, 1, 6], [2, 4, 6], [1, 3], [3, 5, 4, 3], [4, 3], [2, 5, 1], [2, 5, 1], [2, 5, 3], [1, 1, 4, 3, 1, 2, 1], [2, 1, 4, 1]]
+    
+
+
+```python
+print('OOV Index : {}'.format(tokenizer.word_index['OOV']))
+
+```
+
+    OOV Index : 1
+    

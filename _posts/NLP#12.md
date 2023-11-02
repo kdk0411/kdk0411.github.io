@@ -1,0 +1,131 @@
+# 패딩 _ Padding
+
+## 1. Numpy
+
+
+```python
+import numpy as np
+from tensorflow.keras.preprocessing.text import Tokenizer
+
+preprocessed_sentences = [['barber', 'person'], ['barber', 'good', 'person'], ['barber', 'huge', 'person'], ['knew', 'secret'], ['secret', 'kept', 'huge', 'secret'], ['huge', 'secret'], ['barber', 'kept', 'word'], ['barber', 'kept', 'word'], ['barber', 'kept', 'secret'], ['keeping', 'keeping', 'huge', 'secret', 'driving', 'barber', 'crazy'], ['barber', 'went', 'huge', 'mountain']]
+
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts(preprocessed_sentences)
+e_text  = tokenizer.texts_to_sequences(preprocessed_sentences)
+print(e_text)
+```
+
+    [[1, 5], [1, 8, 5], [1, 3, 5], [9, 2], [2, 4, 3, 2], [3, 2], [1, 4, 6], [1, 4, 6], [1, 4, 2], [7, 7, 3, 2, 10, 1, 11], [1, 12, 3, 13]]
+    
+
+
+```python
+max_len = max(len(i) for i in e_text)
+print("Max Length : ", max_len)
+```
+
+    Max Length :  7
+    
+
+    위와 같이 최대 길이는 7입니다.
+    이에 맞춰 모든 문자의 길이를 7로 맞추어 줍니다.
+    길이가 7보다 짧다면 0으로 채워줍니다.
+
+
+```python
+for i in e_text:
+    while len(i)<max_len:
+        i.append(0)
+padded_np = np.array(e_text)
+padded_np
+```
+
+
+
+
+    array([[ 1,  5,  0,  0,  0,  0,  0],
+           [ 1,  8,  5,  0,  0,  0,  0],
+           [ 1,  3,  5,  0,  0,  0,  0],
+           [ 9,  2,  0,  0,  0,  0,  0],
+           [ 2,  4,  3,  2,  0,  0,  0],
+           [ 3,  2,  0,  0,  0,  0,  0],
+           [ 1,  4,  6,  0,  0,  0,  0],
+           [ 1,  4,  6,  0,  0,  0,  0],
+           [ 1,  4,  2,  0,  0,  0,  0],
+           [ 7,  7,  3,  2, 10,  1, 11],
+           [ 1, 12,  3, 13,  0,  0,  0]])
+
+
+
+## 2. 케라스 전처리 도구로 패딩하기
+
+    Numpy와 같이 패딩하기 위해 케라스에서는 pad_sequences()를 제공합니다.
+
+
+```python
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+e_text = tokenizer.texts_to_sequences(preprocessed_sentences)
+print(e_text)
+```
+
+    [[1, 5], [1, 8, 5], [1, 3, 5], [9, 2], [2, 4, 3, 2], [3, 2], [1, 4, 6], [1, 4, 6], [1, 4, 2], [7, 7, 3, 2, 10, 1, 11], [1, 12, 3, 13]]
+    
+
+
+```python
+padded = pad_sequences(e_text)
+padded
+```
+
+
+
+
+    array([[ 0,  0,  0,  0,  0,  1,  5],
+           [ 0,  0,  0,  0,  1,  8,  5],
+           [ 0,  0,  0,  0,  1,  3,  5],
+           [ 0,  0,  0,  0,  0,  9,  2],
+           [ 0,  0,  0,  2,  4,  3,  2],
+           [ 0,  0,  0,  0,  0,  3,  2],
+           [ 0,  0,  0,  0,  1,  4,  6],
+           [ 0,  0,  0,  0,  1,  4,  6],
+           [ 0,  0,  0,  0,  1,  4,  2],
+           [ 7,  7,  3,  2, 10,  1, 11],
+           [ 0,  0,  0,  1, 12,  3, 13]])
+
+
+
+    Numpy때와는 달리 0이 앞에 채워진 것을 볼 수 있다.
+    이는 Numpy와 추구하는 바가 다르다는 것을 보여준다.
+    만약 뒤에 0을 채우고 싶다면 pad_sequences(e_text, padding='post')로
+    사용하면 된다.
+
+
+```python
+padded = pad_sequences(e_text, padding='post')
+padded
+```
+
+
+
+
+    array([[ 1,  5,  0,  0,  0,  0,  0],
+           [ 1,  8,  5,  0,  0,  0,  0],
+           [ 1,  3,  5,  0,  0,  0,  0],
+           [ 9,  2,  0,  0,  0,  0,  0],
+           [ 2,  4,  3,  2,  0,  0,  0],
+           [ 3,  2,  0,  0,  0,  0,  0],
+           [ 1,  4,  6,  0,  0,  0,  0],
+           [ 1,  4,  6,  0,  0,  0,  0],
+           [ 1,  4,  2,  0,  0,  0,  0],
+           [ 7,  7,  3,  2, 10,  1, 11],
+           [ 1, 12,  3, 13,  0,  0,  0]])
+
+
+
+    또한 뒤에 maxlen=num을 지정해주면 길이또한 지정 가능하다.
+    물론 최대 길이보다 짧게 지정하면 데이터는 손실된다.
+    이는 앞단어를 먼저 손실시킨다. 이를 반대로 뒤에 단어를 손실시키고자 
+    한다면 truncating='post'를 사용하면 된다.
+    
+    추가로 value 옵션을 이용하면 기존 0으로 채우던 것을 다른것으로 채울 수
+    있다. 물론 이때는 내가 사용하는 단어 집합의 크기보다 커야 할것이다.

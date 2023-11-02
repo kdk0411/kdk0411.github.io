@@ -1,0 +1,89 @@
+# One-Hot Encoding
+
+    원하는 인덱스에 1의 Value를 부여하고 그외에는 0으로 분류하는 방식입니다.
+
+
+```python
+from konlpy.tag import Okt
+okt = Okt()
+token = okt.morphs("우리의 자연어 처리 공부")
+print(token)
+```
+
+    ['우리', '의', '자연어', '처리', '공부']
+    
+
+
+```python
+word_to_index = {word : index for index, word in enumerate(token)}
+print('단어 :', word_to_index)
+```
+
+    단어 : {'우리': 0, '의': 1, '자연어': 2, '처리': 3, '공부': 4}
+    
+
+
+```python
+def one_hot_encoding(word, word_to_index):
+    one_hot_vector = [0]*(len(word_to_index))
+    index = word_to_index[word]
+    one_hot_vector[index] = 1
+    return one_hot_vector
+
+one_hot_encoding("자연어", word_to_index)
+```
+
+
+
+
+    [0, 0, 1, 0, 0]
+
+
+
+    word_to_index에 저장되어 있는 5개의 인덱스 중에서
+    "자연어"가 담겨져 있는 곳에 1로 표현하는 One-Hot Encoding 함수입니다.
+
+## 케라스를 이용한 One-Hot Encoding
+
+
+```python
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.utils import to_categorical
+
+text = "나랑 점심 먹으러 갈래 점심 메뉴는 햄버거 갈래 갈래 햄버거 최고야"
+
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts([text])
+print('단어 : ', tokenizer.word_index)
+```
+
+    단어 :  {'갈래': 1, '점심': 2, '햄버거': 3, '나랑': 4, '먹으러': 5, '메뉴는': 6, '최고야': 7}
+    
+
+    위와 같이 단어로만 구성된 텍스트가 있다면 texts_to_sequences()를
+    이용하여 정수 시퀀스로 변환이 가능하다.
+    단어 집합 내의 일부 단어들로만 구성된 서브 텍스트를 만들어 확인해보자
+
+
+```python
+sub_text = "점심 먹으러 갈래 메뉴는 햄버거 최고야"
+e_text = tokenizer.texts_to_sequences([sub_text])[0]
+print(e_text)
+```
+
+    [2, 5, 1, 6, 3, 7]
+    
+
+
+```python
+one_hot = to_categorical(e_text)
+print(one_hot)
+```
+
+    [[0. 0. 1. 0. 0. 0. 0. 0.]
+     [0. 0. 0. 0. 0. 1. 0. 0.]
+     [0. 1. 0. 0. 0. 0. 0. 0.]
+     [0. 0. 0. 0. 0. 0. 1. 0.]
+     [0. 0. 0. 1. 0. 0. 0. 0.]
+     [0. 0. 0. 0. 0. 0. 0. 1.]]
+    
